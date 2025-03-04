@@ -103,20 +103,37 @@
                 let char = text.charAt(i);
                 let normalizedChar = char.normalize('NFC');
                 let code = char.charCodeAt(0);
-                if (cyrillicToPolish.has(normalizedChar)) {
-                    console.log(`Matched: '${char}' (code: ${code}, normalized: '${normalizedChar}') → '${cyrillicToPolish.get(normalizedChar)}'`);
-                    result += cyrillicToPolish.get(normalizedChar);
-                } else {
-                    console.log(`No match: '${char}' (code: ${code}, normalized: '${normalizedChar}')`);
-                    // Fallback: Try raw character if normalized fails
-                    if (cyrillicToPolish.has(char)) {
-                        console.log(`Fallback match: '${char}' (code: ${code}) → '${cyrillicToPolish.get(char)}'`);
+                let matched = false;
+
+                // Try multi-character sequences first (e.g., 'ше', 'он')
+                if (i <= text.length - 3 && cyrillicToPolish.has(text.slice(i, i + 3))) {
+                    let seq = text.slice(i, i + 3);
+                    console.log(`Matched 3: '${seq}' (code: ${seq.split('').map(c => c.charCodeAt(0))}) → '${cyrillicToPolish.get(seq)}'`);
+                    result += cyrillicToPolish.get(seq);
+                    i += 3;
+                    matched = true;
+                } else if (i <= text.length - 2 && cyrillicToPolish.has(text.slice(i, i + 2))) {
+                    let seq = text.slice(i, i + 2);
+                    console.log(`Matched 2: '${seq}' (code: ${seq.split('').map(c => c.charCodeAt(0))}) → '${cyrillicToPolish.get(seq)}'`);
+                    result += cyrillicToPolish.get(seq);
+                    i += 2;
+                    matched = true;
+                }
+
+                // Single character fallback
+                if (!matched) {
+                    if (cyrillicToPolish.has(normalizedChar)) {
+                        console.log(`Matched 1 (normalized): '${char}' (code: ${code}, normalized: '${normalizedChar}') → '${cyrillicToPolish.get(normalizedChar)}'`);
+                        result += cyrillicToPolish.get(normalizedChar);
+                    } else if (cyrillicToPolish.has(char)) {
+                        console.log(`Matched 1 (raw): '${char}' (code: ${code}) → '${cyrillicToPolish.get(char)}'`);
                         result += cyrillicToPolish.get(char);
                     } else {
+                        console.log(`No match: '${char}' (code: ${code}, normalized: '${normalizedChar}')`);
                         result += char;
                     }
+                    i += 1;
                 }
-                i += 1;
             }
             return result;
         }
