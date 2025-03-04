@@ -39,17 +39,32 @@ document.addEventListener("DOMContentLoaded", function() {
         let result = "";
         let i = 0;
         while (i < text.length) {
-            // Check longer sequences first (e.g., 'się')
-            if (i <= text.length - 3 && polishToCyrillic[text.substring(i, i + 3)]) {
-                result += polishToCyrillic[text.substring(i, i + 3)];
-                i += 3;
-            } else if (i <= text.length - 2 && polishToCyrillic[text.substring(i, i + 2)]) {
-                result += polishToCyrillic[text.substring(i, i + 2)];
-                i += 2;
-            } else if (polishToCyrillic[text[i]]) {
+            //Check longer sequences first, case-insensitively
+            let found = false;
+            for (let length of [3, 2]) {
+                if (i + length <= text.length) {
+                    const sub = text.substring(i, i + length);
+                    const subLower = sub.toLowerCase(); // Convert to lowercase for lookup
+
+                    if (polishToCyrillic[sub]) { //Original case
+                        result += polishToCyrillic[sub];
+                        i += length;
+                        found = true;
+                        break;
+                    }
+                     else if (polishToCyrillic[subLower]) { // Lowercase
+                        result += polishToCyrillic[subLower];
+                        i += length;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!found && polishToCyrillic[text[i]]) {
                 result += polishToCyrillic[text[i]];
                 i += 1;
-            } else {
+            } else if (!found) {
                 result += text[i];
                 i += 1;
             }
@@ -57,13 +72,15 @@ document.addEventListener("DOMContentLoaded", function() {
         return result;
     }
 
+
+
     function convertToPolish(text) {
         let result = "";
         let i = 0;
         while (i < text.length) {
-            // Check longer sequences first (e.g., 'ше', 'он')
+            // Check longer sequences first
             let found = false;
-            for (let length of [3, 2, 1]) {  // Prioritize longer matches
+            for (let length of [3, 2, 1]) {
                 if (i + length <= text.length) {
                     let substring = text.substring(i, i + length);
                     if (cyrillicToPolish[substring]) {
