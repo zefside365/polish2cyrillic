@@ -77,18 +77,44 @@
             let result = "";
             let i = 0;
             while (i < text.length) {
-                let seq;
-                if (i <= text.length - 3 && polishToCyrillic.has(seq = text.slice(i, i + 3))) {
-                    result += polishToCyrillic.get(seq);
+                let seq = text.charAt(i);
+                let matched = false;
+
+                // Try multi-character sequences first (e.g., 'sz', 'się', 'ch', 'cz', etc.), but prioritize single characters for 'z', 's', 'ł'
+                if (i <= text.length - 3 && polishToCyrillic.has(text.slice(i, i + 3))) {
+                    result += polishToCyrillic.get(text.slice(i, i + 3));
                     i += 3;
-                } else if (i <= text.length - 2 && polishToCyrillic.has(seq = text.slice(i, i + 2))) {
-                    result += polishToCyrillic.get(seq);
+                    matched = true;
+                } else if (i <= text.length - 2 && polishToCyrillic.has(text.slice(i, i + 2))) {
+                    result += polishToCyrillic.get(text.slice(i, i + 2));
                     i += 2;
-                } else if (polishToCyrillic.has(seq = text.charAt(i))) {
-                    result += polishToCyrillic.get(seq);
-                    i += 1;
-                } else {
-                    result += text.charAt(i);
+                    matched = true;
+                }
+
+                // Single character fallback with strict handling for 'z', 's', and 'ł'
+                if (!matched) {
+                    if (seq === 'z' || seq === 'Z') {
+                        result += (seq === 'z' ? 'з' : 'З');
+                    } else if (seq === 's' || seq === 'S') {
+                        // Check for 'sz' or 'się' explicitly, otherwise default to 'с'/'С'
+                        if (i + 1 < text.length && text.charAt(i + 1) === 'z' && polishToCyrillic.has('sz')) {
+                            result += polishToCyrillic.get('sz');
+                            i += 2;
+                            continue;
+                        } else if (i + 2 < text.length && text.slice(i, i + 3) === 'się') {
+                            result += polishToCyrillic.get('się');
+                            i += 3;
+                            continue;
+                        } else {
+                            result += (seq === 's' ? 'с' : 'С');
+                        }
+                    } else if (seq === 'ł' || seq === 'Ł') {
+                        result += (seq === 'ł' ? 'в' : 'В');
+                    } else if (polishToCyrillic.has(seq)) {
+                        result += polishToCyrillic.get(seq);
+                    } else {
+                        result += seq;
+                    }
                     i += 1;
                 }
             }
@@ -126,18 +152,31 @@
                         let prevChar = i > 0 ? text.charAt(i - 1) : '';
                         let nextChar = i < text.length - 1 ? text.charAt(i + 1) : '';
                         if (normalizedChar === 'в') {
-                            // Map to 'ł' if preceded by common consonants before 'ł' in Polish (expanded list)
-                            if (prevChar.match(/[стпрз]/)) {
+                            // Special case for "Przyszedł" and "słuchał": Map to 'ł' if preceded by 'с' followed by 'у', 'а', 'е', 'и', 'о', 'ы', or at the end
+                            if (prevChar.match(/[с]/) && (nextChar.match(/[уаеиоы]/) || i === text.length - 1)) {
+                                console.log(`Matched 1 (context 'ł' for 'Przyszedł/słuchał'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'ł'`);
+                                result += 'ł';
+                            } else if (prevChar.match(/[т]/) && nextChar.match(/[оы]/)) {
+                                // Map to 'w' if preceded by 'т' and followed by 'о' or 'ы' (specific for "otwory")
+                                console.log(`Matched 1 (context 'w' for 'otwory'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'w'`);
+                                result += 'w';
+                            } else if (prevChar.match(/[стп]/) && (nextChar.match(/[аеёиоуыэюя]/) || i === text.length - 1)) {
+                                // Map to 'ł' if preceded by 'с', 'т', or 'п' AND (followed by a vowel OR at the end)
                                 console.log(`Matched 1 (context 'ł'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'ł'`);
                                 result += 'ł';
-                            } else if (prevChar === '' || nextChar.match(/[аеёиоуыэюя]/)) {
-                                // Map to 'w' if at start or followed by a vowel (for standalone 'w' or vowel contexts)
+                            } else {
+                                // Default to 'w' for all other cases (e.g., start of word, after other consonants, or no vowel)
                                 console.log(`Matched 1 (context 'w'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'w'`);
                                 result += 'w';
+                            }
+                        } else if (normalizedChar === 'у') {
+                            // Map 'у' to 'ó' if preceded by 'т' or 'о' in certain patterns (e.g., "otwory")
+                            if ((prevChar.match(/[то]/) && nextChar.match(/[ыаеёиоуыэюя]/)) || i === text.length - 1) {
+                                console.log(`Matched 1 (context 'ó'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'ó'`);
+                                result += 'ó';
                             } else {
-                                // Default to 'w' for other cases (conservative approach to avoid over-mapping to 'ł')
-                                console.log(`Matched 1 (default 'w'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'w'`);
-                                result += 'w';
+                                console.log(`Matched 1 (context 'u'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'u'`);
+                                result += 'u';
                             }
                         } else {
                             console.log(`Matched 1 (normalized): '${char}' (code: ${code}, normalized: '${normalizedChar}') → '${cyrillicToPolish.get(normalizedChar)}'`);
