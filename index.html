@@ -3,22 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polish to Cyrillic Converter</title>
+    <title>Polish ↔ Cyrillic Converter</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Polish to Cyrillic Converter</h1>
-        <textarea id="polishText" placeholder="Enter Polish text here..."></textarea>
-        <button id="convertButton">Convert to Cyrillic</button>
-        <div class="output">
-            <h2>Cyrillic Output:</h2>
-            <textarea id="cyrillicText" readonly placeholder="Cyrillic text will appear here..."></textarea>
+        <h1>Polish ↔ Cyrillic Converter</h1>
+
+        <label for="inputText">Enter text (Polish Latin or Cyrillic):</label>
+        <textarea id="inputText" rows="5" cols="50"></textarea>
+
+        <div class="button-container">
+            <button id="toCyrillicButton">To Cyrillic</button>
+            <button id="toPolishButton">To Polish</button>
+            <button id="copyButton">Copy Output</button>
+            <button id="clearButton">Clear</button>
         </div>
-        <footer>
-            <p>&copy; 2024 polish2cyrillic.com.  All rights reserved.</p>
-        </footer>
+
+        <label for="outputText">Converted output:</label>
+        <textarea id="outputText" rows="5" cols="50" readonly></textarea>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
