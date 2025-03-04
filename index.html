@@ -59,14 +59,14 @@
             ['а', 'a'], ['он', 'ą'], ['б', 'b'], ['ц', 'c'], ['ць', 'ć'],
             ['д', 'd'], ['е', 'e'], ['ен', 'ę'], ['ф', 'f'], ['г', 'g'],
             ['х', 'h'], ['и', 'i'], ['й', 'j'], ['к', 'k'], ['л', 'l'],
-            ['в', 'ł'], ['м', 'm'], ['н', 'n'], ['нь', 'ń'], ['о', 'o'],
+            ['в', 'w'], ['м', 'm'], ['н', 'n'], ['нь', 'ń'], ['о', 'o'],
             ['у', 'u'], ['п', 'p'], ['р', 'r'], ['с', 's'], ['сь', 'ś'],
             ['т', 't'], ['ы', 'y'], ['з', 'z'], ['зь', 'ź'], ['ж', 'ż'],
             ['ч', 'cz'], ['дз', 'dz'], ['дзь', 'dź'], ['дж', 'dż'], ['рж', 'rz'], ['ш', 'sz'], ['ше', 'się'],
             ['А', 'A'], ['ОН', 'Ą'], ['Б', 'B'], ['Ц', 'C'], ['ЦЬ', 'Ć'],
             ['Д', 'D'], ['Е', 'E'], ['ЕН', 'Ę'], ['Ф', 'F'], ['Г', 'G'],
             ['Х', 'H'], ['И', 'I'], ['Й', 'J'], ['К', 'K'], ['Л', 'L'],
-            ['В', 'Ł'], ['М', 'M'], ['Н', 'N'], ['НЬ', 'Ń'], ['О', 'O'],
+            ['В', 'W'], ['М', 'M'], ['Н', 'N'], ['НЬ', 'Ń'], ['О', 'O'],
             ['У', 'U'], ['П', 'P'], ['Р', 'R'], ['С', 'S'], ['СЬ', 'Ś'],
             ['Т', 'T'], ['Ы', 'Y'], ['З', 'Z'], ['ЗЬ', 'Ź'], ['Ж', 'Ż'],
             ['Ч', 'CZ'], ['ДЗ', 'DZ'], ['ДЗЬ', 'DŹ'], ['ДЖ', 'DŻ'], ['РЖ', 'RZ'], ['Ш', 'SZ'], ['ШЕ', 'SIĘ']
@@ -105,7 +105,7 @@
                 let code = char.charCodeAt(0);
                 let matched = false;
 
-                // Try multi-character sequences first (e.g., 'ше', 'он')
+                // Try multi-character sequences first (e.g., 'ше', 'он', 'ен')
                 if (i <= text.length - 3 && cyrillicToPolish.has(text.slice(i, i + 3))) {
                     let seq = text.slice(i, i + 3);
                     console.log(`Matched 3: '${seq}' (code: ${seq.split('').map(c => c.charCodeAt(0))}) → '${cyrillicToPolish.get(seq)}'`);
@@ -120,11 +120,29 @@
                     matched = true;
                 }
 
-                // Single character fallback
+                // Single character fallback with improved 'в' handling
                 if (!matched) {
                     if (cyrillicToPolish.has(normalizedChar)) {
-                        console.log(`Matched 1 (normalized): '${char}' (code: ${code}, normalized: '${normalizedChar}') → '${cyrillicToPolish.get(normalizedChar)}'`);
-                        result += cyrillicToPolish.get(normalizedChar);
+                        let prevChar = i > 0 ? text.charAt(i - 1) : '';
+                        let nextChar = i < text.length - 1 ? text.charAt(i + 1) : '';
+                        if (normalizedChar === 'в') {
+                            // Map to 'ł' if preceded by common consonants before 'ł' in Polish (expanded list)
+                            if (prevChar.match(/[стпрз]/)) {
+                                console.log(`Matched 1 (context 'ł'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'ł'`);
+                                result += 'ł';
+                            } else if (prevChar === '' || nextChar.match(/[аеёиоуыэюя]/)) {
+                                // Map to 'w' if at start or followed by a vowel (for standalone 'w' or vowel contexts)
+                                console.log(`Matched 1 (context 'w'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'w'`);
+                                result += 'w';
+                            } else {
+                                // Default to 'w' for other cases (conservative approach to avoid over-mapping to 'ł')
+                                console.log(`Matched 1 (default 'w'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'w'`);
+                                result += 'w';
+                            }
+                        } else {
+                            console.log(`Matched 1 (normalized): '${char}' (code: ${code}, normalized: '${normalizedChar}') → '${cyrillicToPolish.get(normalizedChar)}'`);
+                            result += cyrillicToPolish.get(normalizedChar);
+                        }
                     } else if (cyrillicToPolish.has(char)) {
                         console.log(`Matched 1 (raw): '${char}' (code: ${code}) → '${cyrillicToPolish.get(char)}'`);
                         result += cyrillicToPolish.get(char);
