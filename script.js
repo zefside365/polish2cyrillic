@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const copyButton = document.getElementById("copyButton");
     const clearButton = document.getElementById("clearButton");
 
-    // Polish-to-Cyrillic mapping (forward)
+    // Updated Polish-to-Cyrillic mapping with better handling of 'się' and overlaps
     const polishToCyrillic = {
         'a': 'а', 'ą': 'он', 'b': 'б', 'c': 'ц', 'ć': 'ць',
         'd': 'д', 'e': 'е', 'ę': 'ен', 'f': 'ф', 'g': 'г',
@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", function() {
         't': 'т', 'u': 'у', 'w': 'в', 'y': 'ы', 'z': 'з',
         'ź': 'зь', 'ż': 'ж', 'ch': 'х', 'cz': 'ч', 'dz': 'дз',
         'dź': 'дзь', 'dż': 'дж', 'rz': 'рж', 'sz': 'ш',
+        'się': 'ше',  // Special case for common Polish reflexive pronoun
         // Uppercase
         'A': 'А', 'Ą': 'ОН', 'B': 'Б', 'C': 'Ц', 'Ć': 'ЦЬ',
         'D': 'Д', 'E': 'Е', 'Ę': 'ЕН', 'F': 'Ф', 'G': 'Г',
@@ -24,10 +25,11 @@ document.addEventListener("DOMContentLoaded", function() {
         'Ó': 'У', 'P': 'П', 'R': 'Р', 'S': 'С', 'Ś': 'СЬ',
         'T': 'Т', 'U': 'У', 'W': 'В', 'Y': 'Ы', 'Z': 'З',
         'Ź': 'ЗЬ', 'Ż': 'Ж', 'CH': 'Х', 'CZ': 'Ч', 'DZ': 'ДЗ',
-        'DŹ': 'ДЗЬ', 'DŻ': 'ДЖ', 'RZ': 'РЖ', 'SZ': 'Ш'
+        'DŹ': 'ДЗЬ', 'DŻ': 'ДЖ', 'RZ': 'РЖ', 'SZ': 'Ш',
+        'SIĘ': 'ШЕ'
     };
 
-    // Reverse mapping (Cyrillic to Polish)
+    // Reverse mapping
     const cyrillicToPolish = {};
     for (const key in polishToCyrillic) {
         cyrillicToPolish[polishToCyrillic[key]] = key;
@@ -37,7 +39,11 @@ document.addEventListener("DOMContentLoaded", function() {
         let result = "";
         let i = 0;
         while (i < text.length) {
-            if (i < text.length - 1 && polishToCyrillic[text.substring(i, i + 2)]) {
+            // Check longer sequences first (e.g., 'się')
+            if (i <= text.length - 3 && polishToCyrillic[text.substring(i, i + 3)]) {
+                result += polishToCyrillic[text.substring(i, i + 3)];
+                i += 3;
+            } else if (i <= text.length - 2 && polishToCyrillic[text.substring(i, i + 2)]) {
                 result += polishToCyrillic[text.substring(i, i + 2)];
                 i += 2;
             } else if (polishToCyrillic[text[i]]) {
@@ -55,8 +61,9 @@ document.addEventListener("DOMContentLoaded", function() {
         let result = "";
         let i = 0;
         while (i < text.length) {
+            // Check longer sequences first (e.g., 'ше', 'он')
             let found = false;
-            for (let length of [2, 1]) {
+            for (let length of [3, 2, 1]) {  // Prioritize longer matches
                 if (i + length <= text.length) {
                     let substring = text.substring(i, i + length);
                     if (cyrillicToPolish[substring]) {
@@ -75,6 +82,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return result;
     }
 
+
     function displayOutput(text) {
         outputText.value = text;
     }
@@ -83,11 +91,11 @@ document.addEventListener("DOMContentLoaded", function() {
         if (outputText.value) {
             navigator.clipboard.writeText(outputText.value)
                 .then(() => {
-                    alert("Output copied to clipboard!"); // Simple alert.  Consider a better UI.
+                    alert("Output copied to clipboard!"); // Consider a better UI notification
                 })
                 .catch(err => {
                     console.error("Failed to copy text: ", err);
-                    alert("Failed to copy to clipboard."); // Simple alert.
+                    alert("Failed to copy to clipboard.");
                 });
         } else {
             alert("No output text to copy.");
