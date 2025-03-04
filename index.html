@@ -4,26 +4,190 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Polish ↔ Cyrillic Converter</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 500px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+            resize: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .buttons {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #copyButton {
+            background-color: #2196F3;
+        }
+        #copyButton:hover {
+            background-color: #1976D2;
+        }
+        #clearButton {
+            background-color: #f44336;
+        }
+        #clearButton:hover {
+            background-color: #d32f2f;
+        }
+        #output {
+            background-color: #f9f9f9;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Polish ↔ Cyrillic Converter</h1>
-
-        <label for="inputText">Enter text (Polish Latin or Cyrillic):</label>
-        <textarea id="inputText" rows="5" cols="50"></textarea>
-
-        <div class="button-container">
-            <button id="toCyrillicButton">To Cyrillic</button>
-            <button id="toPolishButton">To Polish</button>
-            <button id="copyButton">Copy Output</button>
-            <button id="clearButton">Clear</button>
+        <textarea id="input" placeholder="Enter text (Polish Latin or Cyrillic)"></textarea>
+        <div class="buttons">
+            <button onclick="toCyrillic()">To Cyrillic</button>
+            <button onclick="toPolish()">To Polish</button>
+            <button id="copyButton" onclick="copyToClipboard()">Copy Output</button>
+            <button id="clearButton" onclick="clearText()">Clear</button>
         </div>
-
-        <label for="outputText">Converted output:</label>
-        <textarea id="outputText" rows="5" cols="50" readonly></textarea>
+        <textarea id="output" placeholder="Converted output" readonly></textarea>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // Polish-to-Cyrillic mapping
+        const polishToCyrillic = {
+            'a': 'а', 'ą': 'он', 'b': 'б', 'c': 'ц', 'ć': 'ць',
+            'd': 'д', 'e': 'е', 'ę': 'ен', 'f': 'ф', 'g': 'г',
+            'h': 'х', 'i': 'и', 'j': 'й', 'k': 'к', 'l': 'л',
+            'ł': 'в', 'm': 'м', 'n': 'н', 'ń': 'нь', 'o': 'о',
+            'ó': 'у', 'p': 'п', 'r': 'р', 's': 'с', 'ś': 'сь',
+            't': 'т', 'u': 'у', 'w': 'в', 'y': 'ы', 'z': 'з',
+            'ź': 'зь', 'ż': 'ж', 'ch': 'х', 'cz': 'ч', 'dz': 'дз',
+            'dź': 'дзь', 'dż': 'дж', 'rz': 'рж', 'sz': 'ш', 'się': 'ше',
+            'A': 'А', 'Ą': 'ОН', 'B': 'Б', 'C': 'Ц', 'Ć': 'ЦЬ',
+            'D': 'Д', 'E': 'Е', 'Ę': 'ЕН', 'F': 'Ф', 'G': 'Г',
+            'H': 'Х', 'I': 'И', 'J': 'Й', 'K': 'К', 'L': 'Л',
+            'Ł': 'В', 'M': 'М', 'N': 'Н', 'Ń': 'НЬ', 'O': 'О',
+            'Ó': 'У', 'P': 'П', 'R': 'Р', 'S': 'С', 'Ś': 'СЬ',
+            'T': 'Т', 'U': 'У', 'W': 'В', 'Y': 'Ы', 'Z': 'З',
+            'Ź': 'ЗЬ', 'Ż': 'Ж', 'CH': 'Х', 'CZ': 'Ч', 'DZ': 'ДЗ',
+            'DŹ': 'ДЗЬ', 'DŻ': 'ДЖ', 'RZ': 'РЖ', 'SZ': 'Ш', 'SIĘ': 'ШЕ'
+        };
+
+        // Reverse mapping (Cyrillic to Polish)
+        const cyrillicToPolish = Object.fromEntries(
+            Object.entries(polishToCyrillic).map(([k, v]) => [v, k])
+        );
+
+        function convertToCyrillic(text) {
+            let result = "";
+            let i = 0;
+            while (i < text.length) {
+                if (i <= text.length - 3 && polishToCyrillic[text.slice(i, i + 3)]) {
+                    result += polishToCyrillic[text.slice(i, i + 3)];
+                    i += 3;
+                } else if (i <= text.length - 2 && polishToCyrillic[text.slice(i, i + 2)]) {
+                    result += polishToCyrillic[text.slice(i, i + 2)];
+                    i += 2;
+                } else if (polishToCyrillic[text[i]]) {
+                    result += polishToCyrillic[text[i]];
+                    i += 1;
+                } else {
+                    result += text[i];
+                    i += 1;
+                }
+            }
+            return result;
+        }
+
+        function convertToPolish(text) {
+            let result = "";
+            let i = 0;
+            while (i < text.length) {
+                let found = false;
+                for (let len of [3, 2, 1]) {
+                    if (i + len <= text.length && cyrillicToPolish[text.slice(i, i + len)]) {
+                        result += cyrillicToPolish[text.slice(i, i + len)];
+                        i += len;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    result += text[i];
+                    i += 1;
+                }
+            }
+            return result;
+        }
+
+        function toCyrillic() {
+            const input = document.getElementById("input").value;
+            if (!input) {
+                alert("Please enter some text to convert.");
+                return;
+            }
+            const output = convertToCyrillic(input);
+            document.getElementById("output").value = output;
+        }
+
+        function toPolish() {
+            const input = document.getElementById("input").value;
+            if (!input) {
+                alert("Please enter some text to convert.");
+                return;
+            }
+            const output = convertToPolish(input);
+            document.getElementById("output").value = output;
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById("output");
+            if (!output.value) {
+                alert("No output text to copy.");
+                return;
+            }
+            output.select();
+            navigator.clipboard.writeText(output.value).then(() => {
+                alert("Output copied to clipboard!");
+            }).catch(err => {
+                alert("Failed to copy: " + err);
+            });
+        }
+
+        function clearText() {
+            document.getElementById("input").value = "";
+            document.getElementById("output").value = "";
+        }
+    </script>
 </body>
 </html>
