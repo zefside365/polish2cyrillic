@@ -1,5 +1,1 @@
-polish2cyrillic/
-├── index.html         # Main HTML file
-├── styles.css         # CSS for styling
-├── script.js          # JavaScript for the converter logic
-└── README.md          # Optional: instructions for deployment and usage
+
