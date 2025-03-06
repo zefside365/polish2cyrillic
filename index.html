@@ -3,248 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polish Alphabet ↔ Cyrillic Converter</title>
+    <title>Polish Latin to Cyrillic Converter</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 500px; text-align: center; }
-        h1 { font-size: 24px; margin-bottom: 20px; }
-        textarea { width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; font-size: 16px; resize: none; border: 1px solid #ccc; border-radius: 4px; }
-        .buttons { margin: 10px 0; }
-        button { padding: 10px 20px; margin: 0 5px; font-size: 14px; border: none; border-radius: 4px; cursor: pointer; background-color: #4CAF50; color: white; }
-        button:hover { background-color: #45a049; }
-        #verifyButton { background-color: #FF9800; }
-        #verifyButton:hover { background-color: #F57C00; }
-        #copyButton { background-color: #2196F3; }
-        #copyButton:hover { background-color: #1976D2; }
-        #clearButton { background-color: #f44336; }
-        #clearButton:hover { background-color: #d32f2f; }
-        #output { background-color: #f9f9f9; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        textarea, #result {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result {
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Polish Alphabet ↔ Cyrillic Converter</h1>
-        <textarea id="input" placeholder="Enter text (Polish Latin or Cyrillic)"></textarea>
-        <div class="buttons">
-            <button onclick="toCyrillic()">To Cyrillic</button>
-            <button onclick="toPolish()">To Polish</button>
-            <button id="verifyButton" onclick="verifyRoundTrip()">Verify</button>
-            <button id="copyButton" onclick="copyToClipboard()">Copy Output</button>
-            <button id="clearButton" onclick="clearText()">Clear</button>
-        </div>
-        <textarea id="output" placeholder="Converted output" readonly></textarea>
-    </div>
+    <h1>Polish Latin to Cyrillic Converter</h1>
+    <p>Enter Polish text below, then click a button to convert it to Cyrillic or back to Polish Latin.</p>
+    
+    <textarea id="inputText" placeholder="Type Polish text here (e.g., Przyszedł Herbst z pstrągami...)"></textarea>
+    
+    <button onclick="convertToCyrillic()">Convert to Cyrillic</button>
+    <button onclick="convertToPolish()">Convert to Polish Latin</button>
+    
+    <div id="result">Result will appear here...</div>
 
     <script>
-        const polishToCyrillic = new Map([
-            ['a', 'а'], ['ą', 'он'], ['b', 'б'], ['c', 'ц'], ['ć', 'ць'],
-            ['d', 'д'], ['e', 'е'], ['ę', 'ен'], ['f', 'ф'], ['g', 'г'],
-            ['h', 'х'], ['i', 'и'], ['j', 'й'], ['k', 'к'], ['l', 'л'],
-            ['ł', 'в'], ['m', 'м'], ['n', 'н'], ['ń', 'нь'], ['o', 'о'],
-            ['ó', 'у'], ['p', 'п'], ['r', 'р'], ['s', 'с'], ['ś', 'сь'],
-            ['t', 'т'], ['u', 'у'], ['w', 'в'], ['y', 'ы'], ['z', 'з'],
-            ['ź', 'зь'], ['ż', 'ж'], ['ch', 'х'], ['cz', 'ч'], ['dz', 'дз'],
-            ['dź', 'дзь'], ['dż', 'дж'], ['rz', 'рж'], ['sz', 'ш'], ['się', 'ше'],
-            ['A', 'А'], ['Ą', 'ОН'], ['B', 'Б'], ['C', 'Ц'], ['Ć', 'ЦЬ'],
-            ['D', 'Д'], ['E', 'Е'], ['Ę', 'ЕН'], ['F', 'Ф'], ['G', 'Г'],
-            ['H', 'Х'], ['I', 'И'], ['J', 'Й'], ['K', 'К'], ['L', 'Л'],
-            ['Ł', 'В'], ['M', 'М'], ['N', 'Н'], ['Ń', 'НЬ'], ['O', 'О'],
-            ['Ó', 'У'], ['P', 'П'], ['R', 'Р'], ['S', 'С'], ['Ś', 'СЬ'],
-            ['T', 'Т'], ['U', 'У'], ['W', 'В'], ['Y', 'Ы'], ['Z', 'З'],
-            ['Ź', 'ЗЬ'], ['Ż', 'Ж'], ['CH', 'Х'], ['CZ', 'Ч'], ['DZ', 'ДЗ'],
-            ['DŹ', 'ДЗЬ'], ['DŻ', 'ДЖ'], ['RZ', 'РЖ'], ['SZ', 'Ш'], ['SIĘ', 'ШЕ']
-        ]);
+        // Mapping from Polish Latin to Cyrillic
+        const latinToCyrillic = {
+            'a': 'а', 'ą': 'я', 'b': 'б', 'c': 'ц', 'ć': 'ч', 'd': 'д', 'e': 'е', 'ę': 'є',
+            'f': 'ф', 'g': 'г', 'h': 'х', 'i': 'и', 'j': 'й', 'k': 'к', 'l': 'л', 'ł': 'ў',
+            'm': 'м', 'n': 'н', 'ń': 'нь', 'o': 'о', 'ó': 'у', 'p': 'п', 'r': 'р', 's': 'с',
+            'ś': 'ш', 't': 'т', 'u': 'у', 'w': 'в', 'y': 'ы', 'z': 'з', 'ź': 'ж', 'ż': 'дж'
+        };
 
-        const cyrillicToPolish = new Map([
-            ['а', 'a'], ['он', 'ą'], ['б', 'b'], ['ц', 'c'], ['ць', 'ć'],
-            ['д', 'd'], ['е', 'e'], ['ен', 'ę'], ['ф', 'f'], ['г', 'g'],
-            ['х', 'h'], ['и', 'i'], ['й', 'j'], ['к', 'k'], ['л', 'l'],
-            ['в', 'w'], ['м', 'm'], ['н', 'n'], ['нь', 'ń'], ['о', 'o'],
-            ['у', 'u'], ['п', 'p'], ['р', 'r'], ['с', 's'], ['сь', 'ś'],
-            ['т', 't'], ['ы', 'y'], ['з', 'z'], ['зь', 'ź'], ['ж', 'ż'],
-            ['ч', 'cz'], ['дз', 'dz'], ['дзь', 'dź'], ['дж', 'dż'], ['рж', 'rz'], ['ш', 'sz'], ['ше', 'się'],
-            ['А', 'A'], ['ОН', 'Ą'], ['Б', 'B'], ['Ц', 'C'], ['ЦЬ', 'Ć'],
-            ['Д', 'D'], ['Е', 'E'], ['ЕН', 'Ę'], ['Ф', 'F'], ['Г', 'G'],
-            ['Х', 'H'], ['И', 'I'], ['Й', 'J'], ['К', 'K'], ['Л', 'L'],
-            ['В', 'W'], ['М', 'M'], ['Н', 'N'], ['НЬ', 'Ń'], ['О', 'O'],
-            ['У', 'U'], ['П', 'P'], ['Р', 'R'], ['С', 'S'], ['СЬ', 'Ś'],
-            ['Т', 'T'], ['Ы', 'Y'], ['З', 'Z'], ['ЗЬ', 'Ź'], ['Ж', 'Ż'],
-            ['Ч', 'CZ'], ['ДЗ', 'DZ'], ['ДЗЬ', 'DŹ'], ['ДЖ', 'DŻ'], ['РЖ', 'RZ'], ['Ш', 'SZ'], ['ШЕ', 'SIĘ']
-        ]);
+        // Reverse mapping from Cyrillic to Polish Latin
+        const cyrillicToLatin = {
+            'а': 'a', 'я': 'ą', 'б': 'b', 'ц': 'c', 'ч': 'ć', 'д': 'd', 'е': 'e', 'є': 'ę',
+            'ф': 'f', 'г': 'g', 'х': 'h', 'и': 'i', 'й': 'j', 'к': 'k', 'л': 'l', 'ў': 'ł',
+            'м': 'm', 'н': 'n', 'нь': 'ń', 'о': 'o', 'у': 'u', 'п': 'p', 'р': 'r', 'с': 's',
+            'ш': 'ś', 'т': 't', 'в': 'w', 'ы': 'y', 'з': 'z', 'ж': 'ź', 'дж': 'ż'
+        };
 
-        function convertToCyrillic(text) {
-            text = text.normalize('NFC');
-            let result = "";
+        // Function to convert Polish Latin to Cyrillic
+        function convertToCyrillic() {
+            const input = document.getElementById('inputText').value;
+            let result = '';
+            for (let char of input) {
+                // Use mapping if exists, otherwise keep the character (e.g., spaces, punctuation)
+                result += latinToCyrillic[char.toLowerCase()] || char;
+            }
+            document.getElementById('result').textContent = result;
+        }
+
+        // Function to convert Cyrillic back to Polish Latin
+        function convertToPolish() {
+            const input = document.getElementById('inputText').value;
+            let result = '';
             let i = 0;
-            while (i < text.length) {
-                let seq = text.charAt(i);
-                let matched = false;
-
-                // Single character fallback with strict handling for 'z', 's', and 'ł' first
-                if (seq === 'z' || seq === 'Z') {
-                    result += (seq === 'z' ? 'з' : 'З');
-                    i += 1;
-                    matched = true;
-                } else if (seq === 's' || seq === 'S') {
-                    // Check for 'sz' or 'się' explicitly, otherwise default to 'с'/'С'
-                    if (i + 1 < text.length && text.charAt(i + 1) === 'z' && polishToCyrillic.has('sz')) {
-                        result += polishToCyrillic.get('sz');
-                        i += 2;
-                        matched = true;
-                    } else if (i + 2 < text.length && text.slice(i, i + 3) === 'się') {
-                        result += polishToCyrillic.get('się');
-                        i += 3;
-                        matched = true;
-                    } else {
-                        result += (seq === 's' ? 'с' : 'С');
-                        i += 1;
-                        matched = true;
-                    }
-                } else if (seq === 'ł' || seq === 'Ł') {
-                    result += (seq === 'ł' ? 'в' : 'В');
-                    i += 1;
-                    matched = true;
-                }
-
-                // Try multi-character sequences if single character not matched
-                if (!matched && i <= text.length - 3 && polishToCyrillic.has(text.slice(i, i + 3))) {
-                    result += polishToCyrillic.get(text.slice(i, i + 3));
-                    i += 3;
-                    matched = true;
-                } else if (!matched && i <= text.length - 2 && polishToCyrillic.has(text.slice(i, i + 2))) {
-                    result += polishToCyrillic.get(text.slice(i, i + 2));
+            while (i < input.length) {
+                // Check for two-character mapping (e.g., 'дж' for 'ż', 'нь' for 'ń')
+                const twoChar = input.slice(i, i + 2);
+                if (cyrillicToLatin[twoChar]) {
+                    result += cyrillicToLatin[twoChar];
                     i += 2;
-                    matched = true;
-                }
-
-                // Default single character mapping if no match
-                if (!matched && polishToCyrillic.has(seq)) {
-                    result += polishToCyrillic.get(seq);
-                    i += 1;
-                } else if (!matched) {
-                    result += seq;
-                    i += 1;
+                } else {
+                    // Single character mapping or keep as is
+                    const singleChar = input[i];
+                    result += cyrillicToLatin[singleChar] || singleChar;
+                    i++;
                 }
             }
-            return result;
-        }
-
-        function convertToPolish(text) {
-            text = text.normalize('NFC');
-            let result = "";
-            let i = 0;
-            while (i < text.length) {
-                let char = text.charAt(i);
-                let normalizedChar = char.normalize('NFC');
-                let code = char.charCodeAt(0);
-                let matched = false;
-
-                // Try multi-character sequences first (e.g., 'ше', 'он', 'ен')
-                if (i <= text.length - 3 && cyrillicToPolish.has(text.slice(i, i + 3))) {
-                    let seq = text.slice(i, i + 3);
-                    console.log(`Matched 3: '${seq}' (code: ${seq.split('').map(c => c.charCodeAt(0))}) → '${cyrillicToPolish.get(seq)}'`);
-                    result += cyrillicToPolish.get(seq);
-                    i += 3;
-                    matched = true;
-                } else if (i <= text.length - 2 && cyrillicToPolish.has(text.slice(i, i + 2))) {
-                    let seq = text.slice(i, i + 2);
-                    console.log(`Matched 2: '${seq}' (code: ${seq.split('').map(c => c.charCodeAt(0))}) → '${cyrillicToPolish.get(seq)}'`);
-                    result += cyrillicToPolish.get(seq);
-                    i += 2;
-                    matched = true;
-                }
-
-                // Single character fallback with improved 'в' handling
-                if (!matched) {
-                    if (cyrillicToPolish.has(normalizedChar)) {
-                        let prevChar = i > 0 ? text.charAt(i - 1) : '';
-                        let nextChar = i < text.length - 1 ? text.charAt(i + 1) : '';
-                        if (normalizedChar === 'в') {
-                            // Special case for "Przyszedł" and "słuchał": Map to 'ł' if preceded by 'с' followed by 'у', 'а', 'е', 'и', 'о', 'ы', or at the end
-                            if (prevChar.match(/[с]/) && (nextChar.match(/[уаеиоы]/) || i === text.length - 1)) {
-                                console.log(`Matched 1 (context 'ł' for 'Przyszedł/słuchał'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'ł'`);
-                                result += 'ł';
-                            } else if (prevChar.match(/[т]/) && nextChar.match(/[оы]/)) {
-                                // Map to 'w' if preceded by 'т' and followed by 'о' or 'ы' (specific for "otwory")
-                                console.log(`Matched 1 (context 'w' for 'otwory'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'w'`);
-                                result += 'w';
-                            } else if (prevChar.match(/[стп]/) && (nextChar.match(/[аеёиоуыэюя]/) || i === text.length - 1)) {
-                                // Map to 'ł' if preceded by 'с', 'т', or 'п' AND (followed by a vowel OR at the end)
-                                console.log(`Matched 1 (context 'ł'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'ł'`);
-                                result += 'ł';
-                            } else {
-                                // Default to 'w' for all other cases (e.g., start of word, after other consonants, or no vowel)
-                                console.log(`Matched 1 (context 'w'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'w'`);
-                                result += 'w';
-                            }
-                        } else if (normalizedChar === 'у') {
-                            // Map 'у' to 'ó' if preceded by 'т' or 'о' in certain patterns (e.g., "otwory")
-                            if ((prevChar.match(/[то]/) && nextChar.match(/[ыаеёиоуыэюя]/)) || i === text.length - 1) {
-                                console.log(`Matched 1 (context 'ó'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'ó'`);
-                                result += 'ó';
-                            } else {
-                                console.log(`Matched 1 (context 'u'): '${char}' (code: ${code}, normalized: '${normalizedChar}', prev: '${prevChar}', next: '${nextChar}') → 'u'`);
-                                result += 'u';
-                            }
-                        } else {
-                            console.log(`Matched 1 (normalized): '${char}' (code: ${code}, normalized: '${normalizedChar}') → '${cyrillicToPolish.get(normalizedChar)}'`);
-                            result += cyrillicToPolish.get(normalizedChar);
-                        }
-                    } else if (cyrillicToPolish.has(char)) {
-                        console.log(`Matched 1 (raw): '${char}' (code: ${code}) → '${cyrillicToPolish.get(char)}'`);
-                        result += cyrillicToPolish.get(char);
-                    } else {
-                        console.log(`No match: '${char}' (code: ${code}, normalized: '${normalizedChar}')`);
-                        result += char;
-                    }
-                    i += 1;
-                }
-            }
-            return result;
-        }
-
-        function verifyRoundTrip() {
-            const input = document.getElementById("input").value;
-            if (!input) { alert("Please enter some text to verify."); return; }
-            console.log("Starting verification for: ", input);
-            
-            const cyrillic = convertToCyrillic(input);
-            console.log("Cyrillic intermediate: ", cyrillic);
-            
-            const polish = convertToPolish(cyrillic);
-            console.log("Round-trip result: ", polish);
-            
-            document.getElementById("output").value = `To Cyrillic: ${cyrillic}\nBack to Polish: ${polish}`;
-        }
-
-        function toCyrillic() {
-            const input = document.getElementById("input").value;
-            if (!input) { alert("Please enter some text to convert."); return; }
-            const output = convertToCyrillic(input);
-            document.getElementById("output").value = output;
-        }
-
-        function toPolish() {
-            const input = document.getElementById("input").value;
-            if (!input) { alert("Please enter some text to convert."); return; }
-            console.log("Starting reverse conversion for: ", input);
-            const output = convertToPolish(input);
-            document.getElementById("output").value = output;
-            console.log("Reverse conversion result: ", output);
-        }
-
-        function copyToClipboard() {
-            const output = document.getElementById("output");
-            if (!output.value) { alert("No output text to copy."); return; }
-            output.select();
-            navigator.clipboard.writeText(output.value).then(() => {
-                alert("Output copied to clipboard!");
-            }).catch(err => { alert("Failed to copy: " + err); });
-        }
-
-        function clearText() {
-            document.getElementById("input").value = "";
-            document.getElementById("output").value = "";
+            document.getElementById('result').textContent = result;
         }
     </script>
 </body>
